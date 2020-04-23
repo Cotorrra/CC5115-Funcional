@@ -65,7 +65,7 @@ testMersenne :: Spec
 testMersenne = describe "Mersenne test:" $ 
     modifyMaxSuccess (const 1500) $ do
     it "Prime test" $ 
-        property $ \xs -> isPrime (xs::Int) ==> isPrime ((2^xs) - 1)
+        property $ \x -> isPrime (x::Int) ==> isPrime ((2^x) - 1)
 
 
 main :: IO ()

@@ -82,7 +82,7 @@ applyTwicePF f = f . f
     length and filter 
 -}
 howManyAs :: String -> Int
-howManyAs x = length (filter ('a'==) x) -- Ta mala :c 
+howManyAs = length . filter ('a'==)
 
 main:: IO () -- () es el unit, el tipo vacío
 main = pure ()
