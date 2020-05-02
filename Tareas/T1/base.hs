@@ -35,17 +35,31 @@ numberOfHits :: (a -> Bool) -> [a] -> Int
 numberOfHits _ [] = 0
 numberOfHits p (x:xs) | p x = 1 + numberOfHits p xs
                       | otherwise = 0 + numberOfHits p xs
-{-
+
+
 splitAtFirstHit :: (a -> Bool) -> [a] -> ([a],[a])
--- splitAtFirstHit _ [] = ...
-splitAtFirstHit _ x = 12 
-splitAtFirstHit p (x:xs) | p x = [x,xs] -- magic split
-                         | otherwise = [x] ++ splitAtFirstHit p xs
--}
+splitAtFirstHit _ [] = error "no hit in the list"
+splitAtFirstHit p (x:xs) 
+          | length result == 2 = (head result, head (tail result))
+          | length result == 1 = error "no hit in the list"
+          | otherwise = error "cursed error"
+          where result = splitAtFirstHit2 p (x:xs)
 
 
--- positionsAllHits ::
--- complete tipo y definicion, y descomente la linea de arriba
+splitAtFirstHit2 :: (a -> Bool) -> [a] -> [[a]]
+splitAtFirstHit2 _ [] = []
+splitAtFirstHit2 p (x:xs) | p x = splitAtFirstHit2 (\_ -> False) xs
+                          | otherwise = [x] ++ (splitAtFirstHit2 (\_ -> False) xs)
+
+
+positionsAllHits :: (a -> Bool) -> [a] -> [Int]
+positionsAllHits _ [] = []
+positionsAllHits p (x:xs) = countPositions p (x:xs) 0
+
+countPositions :: (a -> Bool) -> [a] -> Int -> [Int]
+countPositions _ [] _ = [] 
+countPositions p (x:xs) n | p x = [n] ++ (countPositions p xs (n+1)) 
+                          | otherwise = (countPositions p xs (n+1)) 
 
 
 evens :: [a] -> [a]
@@ -55,9 +69,6 @@ evens (x:xs) = [x] ++ (odds xs)
 odds :: [a] -> [a]
 odds [] = []
 odds (_:xs) = evens xs
-
-
-
 
 {-------------------------------------------}
 {--------------  EJERCICIO 3  --------------}
@@ -103,8 +114,12 @@ Provea derivacion de isMemberPF
 -}
 
 -- isMemberPF ::
--- complete tipo y definicion, y descomente la linea de arriba
-
+-- isMemberPF :: Eq a => a -> [a] -> Bool
+-- isMemberPF x xs = hasSomeHit (\y -> x == y) xs
+-- isMemberPF x xs = (\y -> x == y) `hasSomeHit`  xs
+-- isMemberPF x xs = (== x) `hasSomeHit`  xs
+-- isMemberPF x xs = (`hasSomeHit` xs) (==x)
+-- isMemberPF x xs = ((`hasSomeHit` xs) ==) x
 
 
 
@@ -122,7 +137,7 @@ testEffPow = describe "testEffPow function:" $ do
 
 testPay :: Spec
 testPay = describe "testPay function:" $ do
-    it "" $
+    it "Pay funciona como deberia" $
         property $ \n -> (n::Int) >= 8 ==> (3 * (fst (pay n))) + (5 * (snd (pay n))) == n
     
 testNumberOfHits :: Spec
