@@ -8,12 +8,12 @@ data Formula = Const Bool
             | Imply Formula Formula
 
 -- A ==> (A && B)
-f1 :: Formula
-f1 = Imply (Var 'A') (And (Var 'A') (Var 'B'))
+ff1 :: Formula
+ff1 = Imply (Var 'A') (And (Var 'A') (Var 'B'))
 
 -- (A && (A ==> B)) ==> B
-f2 :: Formula
-f2 = Imply (And (Var 'A') (Imply (Var 'A') (Var 'B'))) (Var 'B')
+ff2 :: Formula
+ff2 = Imply (And (Var 'A') (Imply (Var 'A') (Var 'B'))) (Var 'B')
 
 -- Associative table that maps keys
 -- of type k to values of type v
@@ -25,7 +25,7 @@ find key table = head [v' | (k',v')<-table, k'==key]
 type Valuation = Assoc Char Bool
 
 eval :: Formula -> Valuation -> Bool
-eval (Const b) s = b
+eval (Const b) _ = b
 eval (Var x) s = find x s
 eval (Not f) s = not (eval f s)
 eval (And f1 f2) s = (eval f1 s) && (eval f2 s)
