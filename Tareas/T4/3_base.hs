@@ -61,26 +61,47 @@ type Move = (Peg,Peg)
 
 -- parte (a)
 push :: Disk -> Peg -> State Conf Conf
-push d p = undefined
+push d p = do
+  (cl, cc, cr) <- get
+  case p of
+    L -> return (cl ++ [d],cc,cr)
+    C -> return (cl,cc ++ [d],cr)
+    R -> return (cl,cc,cr ++ [d])
+
 
 pop :: Peg -> State Conf Disk
-pop p s = undefined
--- complete la definicion
-
-conf :: State Conf Conf
-conf = state (\x -> (([0],[0],[0]),([0],[0],[0])))
-
+pop p = do
+  (cl, cc, cr) <- get
+  case p of
+    L -> return (head (reverse cl))
+    C -> return (head (reverse cc))
+    R -> return (head (reverse cr))
+  
 -- parte (b)
 step :: Move -> State Conf Conf
-step = undefined
+step (s, t) = do
+  disk <- (pop s)
+  pushen <- (push disk t) 
+  return pushen
+
 -- complete la definicion
 
 
 -- parte (c)
-optStrategy :: Int -> Move -> State Conf [(Move,Conf)]
-optStrategy = undefined
--- complete la definicion
+-- Retorna el tercer peg dado dos pegs
+-- ej: compPeg (C,L) = R
+compPeg :: (Peg, Peg) -> Peg
+compPeg (p1,p2) = head (filter (\x -> (x /= p1) && (x /= p2)) [C,R,L])
 
+optStrategy :: Int -> Move -> State Conf [(Move,Conf)]
+optStrategy 1 m = do
+    conf <- step m
+    return [(m, conf)]
+optStrategy n m@(s,t) = do
+    _ <- optStrategy (n-1) (s, (compPeg m))
+    _ <- optStrategy 1 m
+    conf3 <- optStrategy (n-1) ((compPeg m), t)
+    return conf3
 
 -- parte (d)
 {-
@@ -89,6 +110,13 @@ comple aqui su respuesta
 
 
 -- parte (e)
+makeInit :: Int -> Peg -> State Conf 
+makeInit n p =do 
+  case p of
+    L -> return ([0..n],[],[])
+    C -> return ([],[0..n],[])
+    R -> return ([],[],[0..n])
+
 play :: Int -> Peg -> Peg -> IO()
 play = undefined
 -- complete la definicion
