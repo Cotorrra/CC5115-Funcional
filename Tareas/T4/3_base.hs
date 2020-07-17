@@ -61,13 +61,14 @@ type Move = (Peg,Peg)
 
 -- parte (a)
 push :: Disk -> Peg -> State Conf Conf
-push = undefined
--- complete la definicion
+push d p = undefined
 
 pop :: Peg -> State Conf Disk
-pop = undefined
+pop p s = undefined
 -- complete la definicion
 
+conf :: State Conf Conf
+conf = state (\x -> (([0],[0],[0]),([0],[0],[0])))
 
 -- parte (b)
 step :: Move -> State Conf Conf
@@ -131,8 +132,6 @@ resultE3b :: Probability
 resultE3b = undefined
 -- complete la definicion
 
-
 -}
-
 main :: IO()
 main = return ()
