@@ -1,7 +1,6 @@
 import Control.Monad.State
--- import Numeric.Probability.Distribution hiding (map,coin,filter)
-
-
+import Data.Ratio
+import Numeric.Probability.Distribution hiding (map,coin,filter)
 
 {-------------------------------------------}
 {--------------  EJERCICIO 1  --------------}
@@ -64,25 +63,36 @@ push :: Disk -> Peg -> State Conf Conf
 push d p = do
   (cl, cc, cr) <- get
   case p of
-    L -> return (cl ++ [d],cc,cr)
-    C -> return (cl,cc ++ [d],cr)
-    R -> return (cl,cc,cr ++ [d])
-
+    L -> do
+      put ([d] ++ cl ,cc,cr)
+      return ([d] ++ cl,cc,cr)
+    C -> do
+      put (cl,[d] ++ cc ,cr)
+      return (cl,[d] ++ cc,cr)
+    R -> do
+      put (cl,cc,[d] ++ cr)
+      return (cl,cc,[d] ++ cr)
 
 pop :: Peg -> State Conf Disk
 pop p = do
   (cl, cc, cr) <- get
   case p of
-    L -> return (head (reverse cl))
-    C -> return (head (reverse cc))
-    R -> return (head (reverse cr))
+    L -> do
+      put (drop 1 cl,cc,cr)
+      return (head cl)
+    C -> do
+      put (cl,drop 1 cc,cr)      
+      return (head cc)
+    R -> do
+      put (cl,cc,drop 1 cr)      
+      return (head cr)
   
 -- parte (b)
 step :: Move -> State Conf Conf
 step (s, t) = do
-  disk <- (pop s)
-  pushen <- (push disk t) 
-  return pushen
+  popped <- (pop s)
+  pushed <- (push popped t)
+  return pushed
 
 -- complete la definicion
 
@@ -98,31 +108,48 @@ optStrategy 1 m = do
     conf <- step m
     return [(m, conf)]
 optStrategy n m@(s,t) = do
-    _ <- optStrategy (n-1) (s, (compPeg m))
-    _ <- optStrategy 1 m
+    conf1 <- optStrategy (n-1) (s, (compPeg m))
+    conf2 <- optStrategy 1 m
     conf3 <- optStrategy (n-1) ((compPeg m), t)
-    return conf3
+    return (conf1 ++ conf2 ++ conf3)
+
 
 -- parte (d)
 {-
-comple aqui su respuesta
+Las diferencias que se ven entre ambas implementaciones
+es que la complejidad de las funciones pop/push es más
+alta en comparación a su version normal dado que éstas 
+funciones (pop y push) manejan directamente el estado
+mientras que en la implementación anterior sólo modifican
+un función.
+Esto hace que optStrategy se hace más simple de implementar
+siguiendo directamente la definición recursiva.
+La solución implementada con mónadas de estado es una
+solución más elegante para resolver este problema, dado
+que la implementación de la funciones son más limpias y 
+fáciles de trabajar una vez que se tiene un buen manejo 
+de las mónadas de estado.
+
 -}
 
-
 -- parte (e)
-makeInit :: Int -> Peg -> State Conf 
-makeInit n p =do 
-  case p of
-    L -> return ([0..n],[],[])
-    C -> return ([],[0..n],[])
-    R -> return ([],[],[0..n])
+makeInit :: Int -> Peg -> Conf 
+makeInit n p = case p of
+    L -> ([0..(n-1)],[],[])
+    C -> ([],[0..(n-1)],[])
+    R -> ([],[],[0..(n-1)])
 
 play :: Int -> Peg -> Peg -> IO()
-play = undefined
+play n s t = putStr $ show initConf ++ foldr f v strat ++ "\n" where
+  initConf  = makeInit n s
+  v         = []
+  f (m,c) r = "\n -> " ++ show m ++ " -> " ++ show c ++ r
+  strat =  evalState (optStrategy n (s,t)) initConf
+  
 -- complete la definicion
 
 
-{-
+--{-
 
 {-------------------------------------------}
 {--------------  EJERCICIO 3  --------------}
@@ -133,12 +160,16 @@ type Dist a = T Probability a
 
 -- Parte (a.I)
 pointDist :: Int -> Dist (Int, Int)
-pointDist = undefined
+pointDist r = do
+  x <- uniform [-r..r]
+  y <- uniform [-r..r]
+  return (x,y)
 -- complete la definicion
 
 -- Parte (a.II)
 resultE3a :: Int -> Probability
-resultE3a = undefined
+resultE3a r = 4 * ((\(x,y) -> x*x + y*y < r*r) ?? (pointDist r))
+
 -- complete la definicion
 
 
@@ -146,20 +177,31 @@ resultE3a = undefined
 {-
 Si le resulta conveniente, puede empezar siguiendo
 el hint dado:
-
-data Uni     = Chile | Cato deriving Eq
+-}
+data Uni     = Chile | Cato deriving (Eq, Show, Ord)
 type Urn     = (Int, Int)
 -- 1er componente: #jugadores Chile, 2do componente: #jugadores Cato
+initUrn :: Urn
+initUrn = (8,2)
 
-pickPlayer :: Urn -> Dist (Uni, Urn)
-pickPlayer = undefined
--}
+pickPlayer :: Urn -> Dist Uni
+pickPlayer (u,cato) = choose (toRational (u % (u+cato))) Chile Cato
 
+pickSuccPlayer :: Int -> Uni -> Urn -> Probability
+pickSuccPlayer 0 _ _ = 1
+pickSuccPlayer n Chile urn@(u,cato) = ((\x -> x == Chile) ?? pickPlayer urn) * (pickSuccPlayer (n-1) Chile (u-1,cato))
+pickSuccPlayer n Cato urn@(u,cato) = ((\x -> x == Cato) ?? pickPlayer urn) * (pickSuccPlayer (n-1) Chile (u,cato-1))
 
 resultE3b :: Probability
-resultE3b = undefined
--- complete la definicion
+resultE3b = let
+  p1 = pickSuccPlayer 2 Cato initUrn 
+  p2 = (pickSuccPlayer 2 Chile initUrn) * (pickSuccPlayer 2 Cato (6,2))
+  p3 = (pickSuccPlayer 4 Chile initUrn) * (pickSuccPlayer 2 Cato (4,2))
+  p4 = (pickSuccPlayer 6 Chile initUrn) * (pickSuccPlayer 2 Cato (2,2))
+  p5 = (pickSuccPlayer 8 Chile initUrn) * (pickSuccPlayer 2 Cato (0,2))
+  in
+    1 - (p1 + p2 + p3 + p4 + p5)
 
--}
+---}
 main :: IO()
 main = return ()
